@@ -1,0 +1,57 @@
+version: "3"
+
+set: [errexit, nounset, pipefail]
+shopt: [globstar]
+
+includes:
+  lint:
+    taskfile: https://github.com/nikaro/meta/raw/tasks-v1/taskfiles/lint.yml
+    internal: true
+  format:
+    taskfile: https://github.com/nikaro/meta/raw/tasks-v1/taskfiles/format.yml
+    internal: true
+
+tasks:
+  init:
+    desc: Initialize repositry
+    cmds:
+      - git config core.hooksPath .githooks
+
+  lint:
+    desc: Run linters
+    cmds:
+      - task: lint:default
+      - task: lint:python
+
+  lint:python:
+    desc: Lint Python code
+    sources:
+      - ./pyproject.toml
+      - ./sops_wheel/**/*.py
+    cmds:
+      - ruff format --check
+      - ruff check
+
+  format:
+    desc: Run formatters
+    cmds:
+      - task: format:default
+      - task: format:python
+
+  format:python:
+    desc: Format Python code
+    sources:
+      - ./pyproject.toml
+      - ./sops_wheel/**/*.py
+    cmds:
+      - ruff format
+
+  clean:
+    desc: Cleanup workspace
+    cmds:
+      - rm -rf ./dist/
+      - rm -rf ./.ruff_cache/
+      - rm -rf ./.pytest_cache/
+      - fd --type directory --no-ignore __pycache__ | xargs --no-run-if-empty rm -rf
+      - rm -rf ./site/
+      - rm -rf ./htmlcov/
